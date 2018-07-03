@@ -16,7 +16,9 @@ public enum DecodeFormat {
    * {@link android.graphics.Bitmap#getConfig()} when possible.
    *
    * <p>On Android O+, this format will will use ARGB_8888 only when it's not possible to use
-   * {@link android.graphics.Bitmap.Config#HARDWARE}.
+   * {@link android.graphics.Bitmap.Config#HARDWARE}. More information is available about hardware
+   * Bitmaps here: https://goo.gl/tn2A6k. If you need to disable hardware Bitmaps for a particular
+   * request, use {@link com.bumptech.glide.request.RequestOptions#disallowHardwareConfig()}.
    *
    * <p> GIF images decoded by {@link android.graphics.BitmapFactory} currently use an internal
    * hidden format that is returned as null from {@link android.graphics.Bitmap#getConfig()}. Since
@@ -24,17 +26,6 @@ public enum DecodeFormat {
    * this setting is a preference, not a promise.
    */
   PREFER_ARGB_8888,
-
-  /**
-   * Identical to {@link #PREFER_ARGB_8888} but prevents Glide from using {@link
-   * android.graphics.Bitmap.Config#HARDWARE} on Android O+.
-   *
-   * @deprecated If you must disable hardware bitmaps, set
-   * {@link com.bumptech.glide.load.resource.bitmap.Downsampler#ALLOW_HARDWARE_CONFIG} to false
-   * instead.
-   */
-  @Deprecated
-  PREFER_ARGB_8888_DISALLOW_HARDWARE,
 
   /**
    * Bitmaps decoded from image formats that support and/or use alpha (some types of PNGs, GIFs etc)
@@ -51,5 +42,5 @@ public enum DecodeFormat {
   /**
    * The default value for DecodeFormat.
    */
-  public static final DecodeFormat DEFAULT = PREFER_ARGB_8888_DISALLOW_HARDWARE;
+  public static final DecodeFormat DEFAULT = PREFER_ARGB_8888;
 }

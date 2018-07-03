@@ -1,6 +1,5 @@
 package com.bumptech.glide.load.resource.bitmap;
 
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.support.annotation.NonNull;
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
@@ -27,28 +26,6 @@ public final class RoundedCorners extends BitmapTransformation {
     this.roundingRadius = roundingRadius;
   }
 
-  /**
-   * @param roundingRadius the corner radius (in device-specific pixels).
-   * @throws IllegalArgumentException if rounding radius is 0 or less.
-   *
-   * @deprecated Use {@link #RoundedCorners(int)}
-   */
-  @Deprecated
-  public RoundedCorners(@SuppressWarnings("unused") BitmapPool bitmapPool, int roundingRadius) {
-    this(roundingRadius);
-  }
-
-  /**
-   * @param roundingRadius the corner radius (in device-specific pixels).
-   * @throws IllegalArgumentException if rounding radius is 0 or less.
-   *
-   * @deprecated Use {@link #RoundedCorners(int)}
-   */
-  @Deprecated
-  public RoundedCorners(@SuppressWarnings("unused") Context context, int roundingRadius) {
-    this(roundingRadius);
-  }
-
   @Override
   protected Bitmap transform(
       @NonNull BitmapPool pool, @NonNull Bitmap toTransform, int outWidth, int outHeight) {
@@ -71,7 +48,7 @@ public final class RoundedCorners extends BitmapTransformation {
   }
 
   @Override
-  public void updateDiskCacheKey(MessageDigest messageDigest) {
+  public void updateDiskCacheKey(@NonNull MessageDigest messageDigest) {
     messageDigest.update(ID_BYTES);
 
     byte[] radiusData = ByteBuffer.allocate(4).putInt(roundingRadius).array();

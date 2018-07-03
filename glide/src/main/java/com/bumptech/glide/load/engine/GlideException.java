@@ -15,13 +15,18 @@ import java.util.List;
 /**
  * An exception with zero or more causes indicating why a load in Glide failed.
  */
+// Public API.
+@SuppressWarnings("WeakerAccess")
 public final class GlideException extends Exception {
+  private static final long serialVersionUID = 1L;
+
   private static final StackTraceElement[] EMPTY_ELEMENTS = new StackTraceElement[0];
 
   private final List<Throwable> causes;
   private Key key;
   private DataSource dataSource;
   private Class<?> dataClass;
+  private String detailMessage;
 
   public GlideException(String message) {
     this(message, Collections.<Throwable>emptyList());
@@ -32,7 +37,7 @@ public final class GlideException extends Exception {
   }
 
   public GlideException(String detailMessage, List<Throwable> causes) {
-    super(detailMessage);
+    this.detailMessage = detailMessage;
     setStackTrace(EMPTY_ELEMENTS);
     this.causes = causes;
   }
@@ -47,6 +52,10 @@ public final class GlideException extends Exception {
     this.dataClass = dataClass;
   }
 
+
+
+  // No need to synchronize when doing nothing whatsoever.
+  @SuppressWarnings("UnsynchronizedOverridesSynchronized")
   @Override
   public Throwable fillInStackTrace() {
     // Avoid an expensive allocation by doing nothing here. Causes should contain all relevant
@@ -125,12 +134,30 @@ public final class GlideException extends Exception {
     appendCauses(getCauses(), new IndentedAppendable(appendable));
   }
 
+  // PMD doesn't seem to notice that we're allocating the builder with the suggested size.
+  @SuppressWarnings("PMD.InsufficientStringBufferDeclaration")
   @Override
   public String getMessage() {
-    return super.getMessage()
-        + (dataClass != null ? ", " + dataClass : "")
-        + (dataSource != null ? ", " + dataSource : "")
-        + (key != null ? ", " + key : "");
+    StringBuilder result = new StringBuilder(71)
+        .append(detailMessage)
+        .append(dataClass != null ? ", " + dataClass : "")
+        .append(dataSource != null ? ", " + dataSource : "")
+        .append(key != null ? ", " + key : "");
+
+    List<Throwable> rootCauses = getRootCauses();
+    if (rootCauses.isEmpty()) {
+      return result.toString();
+    } else if (rootCauses.size() == 1) {
+      result.append("\nThere was 1 cause:");
+    } else {
+      result.append("\nThere were ").append(rootCauses.size()).append(" causes:");
+    }
+    for (Throwable cause : rootCauses) {
+      result.append('\n')
+          .append(cause.getClass().getName()).append('(').append(cause.getMessage()).append(')');
+    }
+    result.append("\n call GlideException#logRootCauses(String) for more detail");
+    return result.toString();
   }
 
   // Appendable throws, PrintWriter, PrintStream, and IndentedAppendable do not, so this should

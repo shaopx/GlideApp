@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.NonNull;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.Transformation;
 import com.bumptech.glide.load.engine.Resource;
@@ -39,12 +40,13 @@ public class DrawableTransformation implements Transformation<Drawable> {
 
   @SuppressWarnings("unchecked")
   public Transformation<BitmapDrawable> asBitmapDrawable() {
-   return (Transformation<BitmapDrawable>) (Transformation<?>) this;
+    return (Transformation<BitmapDrawable>) (Transformation<?>) this;
   }
 
+  @NonNull
   @Override
-  public Resource<Drawable> transform(Context context, Resource<Drawable> resource, int outWidth,
-      int outHeight) {
+  public Resource<Drawable> transform(@NonNull Context context,
+      @NonNull Resource<Drawable> resource, int outWidth, int outHeight) {
     BitmapPool bitmapPool = Glide.get(context).getBitmapPool();
     Drawable drawable = resource.get();
     Resource<Bitmap> bitmapResourceToTransform =
@@ -63,15 +65,16 @@ public class DrawableTransformation implements Transformation<Drawable> {
       transformedBitmapResource.recycle();
       return resource;
     } else {
-      return newDrawableResource(context, transformedBitmapResource.get());
+      return newDrawableResource(context, transformedBitmapResource);
     }
   }
 
-  @SuppressWarnings("unchecked")
+  // It's clearer to cast the result in a separate line from obtaining it.
+  @SuppressWarnings({"unchecked", "PMD.UnnecessaryLocalBeforeReturn"})
   private Resource<Drawable> newDrawableResource(
-      Context context, Bitmap transformed) {
+      Context context, Resource<Bitmap> transformed) {
     Resource<? extends Drawable> result =
-        LazyBitmapDrawableResource.obtain(context, transformed);
+        LazyBitmapDrawableResource.obtain(context.getResources(), transformed);
     return (Resource<Drawable>) result;
   }
 
@@ -90,7 +93,7 @@ public class DrawableTransformation implements Transformation<Drawable> {
   }
 
   @Override
-  public void updateDiskCacheKey(MessageDigest messageDigest) {
+  public void updateDiskCacheKey(@NonNull MessageDigest messageDigest) {
     wrapped.updateDiskCacheKey(messageDigest);
   }
 }

@@ -62,6 +62,8 @@ public class LruBitmapPool implements BitmapPool {
    *                       allowed to be put into the pool. Configs not in the allowed put will be
    *                       rejected.
    */
+  // Public API.
+  @SuppressWarnings("unused")
   public LruBitmapPool(long maxSize, Set<Bitmap.Config> allowedConfigs) {
     this(maxSize, getDefaultStrategy(), allowedConfigs);
   }
@@ -126,7 +128,7 @@ public class LruBitmapPool implements BitmapPool {
       // contents individually, so we do so here. See issue #131.
       result.eraseColor(Color.TRANSPARENT);
     } else {
-      result = Bitmap.createBitmap(width, height, config);
+      result = createBitmap(width, height, config);
     }
 
     return result;
@@ -137,9 +139,14 @@ public class LruBitmapPool implements BitmapPool {
   public Bitmap getDirty(int width, int height, Bitmap.Config config) {
     Bitmap result = getDirtyOrNull(width, height, config);
     if (result == null) {
-      result = Bitmap.createBitmap(width, height, config);
+      result = createBitmap(width, height, config);
     }
     return result;
+  }
+
+  @NonNull
+  private static Bitmap createBitmap(int width, int height, @Nullable Bitmap.Config config) {
+    return Bitmap.createBitmap(width, height, config != null ? config : DEFAULT_CONFIG);
   }
 
   @TargetApi(Build.VERSION_CODES.O)
@@ -157,7 +164,8 @@ public class LruBitmapPool implements BitmapPool {
   }
 
   @Nullable
-  private synchronized Bitmap getDirtyOrNull(int width, int height, Bitmap.Config config) {
+  private synchronized Bitmap getDirtyOrNull(
+      int width, int height, @Nullable Bitmap.Config config) {
     assertNotHardwareConfig(config);
     // Config will be null for non public config types, which can lead to transformations naively
     // passing in null as the requested config here. See issue #194.
@@ -211,8 +219,9 @@ public class LruBitmapPool implements BitmapPool {
     }
     if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) {
       clearMemory();
-    } else if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN) {
-      trimToSize(maxSize / 2);
+    } else if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN
+        || level == android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL) {
+      trimToSize(getMaxSize() / 2);
     }
   }
 
@@ -262,8 +271,7 @@ public class LruBitmapPool implements BitmapPool {
 
   @TargetApi(Build.VERSION_CODES.O)
   private static Set<Bitmap.Config> getDefaultAllowedConfigs() {
-    Set<Bitmap.Config> configs = new HashSet<>();
-    configs.addAll(Arrays.asList(Bitmap.Config.values()));
+    Set<Bitmap.Config> configs = new HashSet<>(Arrays.asList(Bitmap.Config.values()));
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       // GIFs, among other types, end up with a native Bitmap config that doesn't map to a java
       // config and is treated as null in java code. On KitKat+ these Bitmaps can be reconfigured
@@ -306,7 +314,7 @@ public class LruBitmapPool implements BitmapPool {
     }
   }
 
-  private static class NullBitmapTracker implements BitmapTracker {
+  private static final class NullBitmapTracker implements BitmapTracker {
 
     @Synthetic
     NullBitmapTracker() { }

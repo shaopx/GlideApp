@@ -1,12 +1,15 @@
 package com.bumptech.glide.load.engine.cache;
 
+import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.os.Build;
+import android.support.annotation.VisibleForTesting;
 import android.text.format.Formatter;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import com.bumptech.glide.util.Preconditions;
+import com.bumptech.glide.util.Synthetic;
 
 /**
  * A calculator that tries to intelligently determine cache sizes for a given device based on some
@@ -14,9 +17,9 @@ import com.bumptech.glide.util.Preconditions;
  */
 public final class MemorySizeCalculator {
   private static final String TAG = "MemorySizeCalculator";
-  // Visible for testing.
+  @VisibleForTesting
   static final int BYTES_PER_ARGB_8888_PIXEL = 4;
-  static final int LOW_MEMORY_BYTE_ARRAY_POOL_DIVISOR = 2;
+  private static final int LOW_MEMORY_BYTE_ARRAY_POOL_DIVISOR = 2;
 
   private final int bitmapPoolSize;
   private final int memoryCacheSize;
@@ -112,13 +115,15 @@ public final class MemorySizeCalculator {
     return Formatter.formatFileSize(context, bytes);
   }
 
-  private static boolean isLowMemoryDevice(ActivityManager activityManager) {
+  @TargetApi(Build.VERSION_CODES.KITKAT)
+  @Synthetic static boolean isLowMemoryDevice(ActivityManager activityManager) {
     // Explicitly check with an if statement, on some devices both parts of boolean expressions
     // can be evaluated even if we'd normally expect a short circuit.
+    //noinspection SimplifiableIfStatement
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
       return activityManager.isLowRamDevice();
     } else {
-      return false;
+      return true;
     }
   }
 
@@ -126,8 +131,10 @@ public final class MemorySizeCalculator {
    * Constructs an {@link MemorySizeCalculator} with reasonable defaults that can be optionally
    * overridden.
    */
+  // Public API.
+  @SuppressWarnings({"WeakerAccess", "unused"})
   public static final class Builder {
-    // Visible for testing.
+    @VisibleForTesting
     static final int MEMORY_CACHE_TARGET_SCREENS = 2;
 
     /**
@@ -143,17 +150,17 @@ public final class MemorySizeCalculator {
     // 4MB.
     static final int ARRAY_POOL_SIZE_BYTES = 4 * 1024 * 1024;
 
-    private final Context context;
+    @Synthetic final Context context;
 
-    // Modifiable for testing.
-    private ActivityManager activityManager;
-    private ScreenDimensions screenDimensions;
+    // Modifiable (non-final) for testing.
+    @Synthetic ActivityManager activityManager;
+    @Synthetic ScreenDimensions screenDimensions;
 
-    private float memoryCacheScreens = MEMORY_CACHE_TARGET_SCREENS;
-    private float bitmapPoolScreens = BITMAP_POOL_TARGET_SCREENS;
-    private float maxSizeMultiplier = MAX_SIZE_MULTIPLIER;
-    private float lowMemoryMaxSizeMultiplier = LOW_MEMORY_MAX_SIZE_MULTIPLIER;
-    private int arrayPoolSizeBytes = ARRAY_POOL_SIZE_BYTES;
+    @Synthetic float memoryCacheScreens = MEMORY_CACHE_TARGET_SCREENS;
+    @Synthetic float bitmapPoolScreens = BITMAP_POOL_TARGET_SCREENS;
+    @Synthetic float maxSizeMultiplier = MAX_SIZE_MULTIPLIER;
+    @Synthetic float lowMemoryMaxSizeMultiplier = LOW_MEMORY_MAX_SIZE_MULTIPLIER;
+    @Synthetic int arrayPoolSizeBytes = ARRAY_POOL_SIZE_BYTES;
 
     public Builder(Context context) {
       this.context = context;
@@ -177,7 +184,7 @@ public final class MemorySizeCalculator {
      * returns this Builder.
      */
     public Builder setMemoryCacheScreens(float memoryCacheScreens) {
-      Preconditions.checkArgument(bitmapPoolScreens >= 0,
+      Preconditions.checkArgument(memoryCacheScreens >= 0,
           "Memory cache screens must be greater than or equal to 0");
       this.memoryCacheScreens = memoryCacheScreens;
       return this;
@@ -237,13 +244,13 @@ public final class MemorySizeCalculator {
       return this;
     }
 
-    // Visible for testing.
+    @VisibleForTesting
     Builder setActivityManager(ActivityManager activityManager) {
       this.activityManager = activityManager;
       return this;
     }
 
-    // Visible for testing.
+    @VisibleForTesting
     Builder setScreenDimensions(ScreenDimensions screenDimensions) {
       this.screenDimensions = screenDimensions;
       return this;
@@ -257,7 +264,7 @@ public final class MemorySizeCalculator {
   private static final class DisplayMetricsScreenDimensions implements ScreenDimensions {
     private final DisplayMetrics displayMetrics;
 
-    public DisplayMetricsScreenDimensions(DisplayMetrics displayMetrics) {
+    DisplayMetricsScreenDimensions(DisplayMetrics displayMetrics) {
       this.displayMetrics = displayMetrics;
     }
 

@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 import com.bumptech.glide.Glide;
@@ -33,12 +34,12 @@ class GifFrameLoader {
   private final GifDecoder gifDecoder;
   private final Handler handler;
   private final List<FrameCallback> callbacks = new ArrayList<>();
-  @Synthetic final RequestManager requestManager;
+  @SuppressWarnings("WeakerAccess") @Synthetic final RequestManager requestManager;
   private final BitmapPool bitmapPool;
 
-  private boolean isRunning = false;
-  private boolean isLoadPending = false;
-  private boolean startFromFirstFrame = false;
+  private boolean isRunning;
+  private boolean isLoadPending;
+  private boolean startFromFirstFrame;
   private RequestBuilder<Bitmap> requestBuilder;
   private DelayTarget current;
   private boolean isCleared;
@@ -53,7 +54,7 @@ class GifFrameLoader {
     void onFrameReady();
   }
 
-  public GifFrameLoader(
+  GifFrameLoader(
       Glide glide,
       GifDecoder gifDecoder,
       int width,
@@ -110,10 +111,10 @@ class GifFrameLoader {
     if (isCleared) {
       throw new IllegalStateException("Cannot subscribe to a cleared frame loader");
     }
-    boolean start = callbacks.isEmpty();
     if (callbacks.contains(frameCallback)) {
       throw new IllegalStateException("Cannot subscribe twice in a row");
     }
+    boolean start = callbacks.isEmpty();
     callbacks.add(frameCallback);
     if (start) {
       start();
@@ -284,8 +285,8 @@ class GifFrameLoader {
   }
 
   private class FrameLoaderCallback implements Handler.Callback {
-    public static final int MSG_DELAY = 1;
-    public static final int MSG_CLEAR = 2;
+    static final int MSG_DELAY = 1;
+    static final int MSG_CLEAR = 2;
 
     @Synthetic
     FrameLoaderCallback() { }
@@ -304,7 +305,7 @@ class GifFrameLoader {
     }
   }
 
-  // Visible for testing.
+  @VisibleForTesting
   static class DelayTarget extends SimpleTarget<Bitmap> {
     private final Handler handler;
     @Synthetic final int index;
@@ -322,7 +323,8 @@ class GifFrameLoader {
     }
 
     @Override
-    public void onResourceReady(Bitmap resource, Transition<? super Bitmap> transition) {
+    public void onResourceReady(@NonNull Bitmap resource,
+        @Nullable Transition<? super Bitmap> transition) {
       this.resource = resource;
       Message msg = handler.obtainMessage(FrameLoaderCallback.MSG_DELAY, this);
       handler.sendMessageAtTime(msg, targetTime);

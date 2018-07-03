@@ -2,15 +2,15 @@ package com.bumptech.glide.request;
 
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.target.SizeReadyCallback;
 import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.request.transition.Transition;
 import com.bumptech.glide.util.Util;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -119,7 +119,7 @@ public class RequestFutureTarget<R> implements FutureTarget<R>,
   }
 
   @Override
-  public R get(long time, TimeUnit timeUnit)
+  public R get(long time, @NonNull TimeUnit timeUnit)
       throws InterruptedException, ExecutionException, TimeoutException {
     return doGet(timeUnit.toMillis(time));
   }
@@ -128,12 +128,12 @@ public class RequestFutureTarget<R> implements FutureTarget<R>,
    * A callback that should never be invoked directly.
    */
   @Override
-  public void getSize(SizeReadyCallback cb) {
+  public void getSize(@NonNull SizeReadyCallback cb) {
     cb.onSizeReady(width, height);
   }
 
   @Override
-  public void removeCallback(SizeReadyCallback cb) {
+  public void removeCallback(@NonNull SizeReadyCallback cb) {
     // Do nothing because we do not retain references to SizeReadyCallbacks.
   }
 
@@ -152,7 +152,7 @@ public class RequestFutureTarget<R> implements FutureTarget<R>,
    * A callback that should never be invoked directly.
    */
   @Override
-  public void onLoadCleared(Drawable placeholder) {
+  public void onLoadCleared(@Nullable Drawable placeholder) {
     // Do nothing.
   }
 
@@ -160,7 +160,7 @@ public class RequestFutureTarget<R> implements FutureTarget<R>,
    * A callback that should never be invoked directly.
    */
   @Override
-  public void onLoadStarted(Drawable placeholder) {
+  public void onLoadStarted(@Nullable Drawable placeholder) {
     // Do nothing.
   }
 
@@ -168,7 +168,7 @@ public class RequestFutureTarget<R> implements FutureTarget<R>,
    * A callback that should never be invoked directly.
    */
   @Override
-  public synchronized void onLoadFailed(Drawable errorDrawable) {
+  public synchronized void onLoadFailed(@Nullable Drawable errorDrawable) {
     // Ignored, synchronized for backwards compatibility.
   }
 
@@ -176,7 +176,8 @@ public class RequestFutureTarget<R> implements FutureTarget<R>,
    * A callback that should never be invoked directly.
    */
   @Override
-  public synchronized void onResourceReady(R resource, Transition<? super R> transition) {
+  public synchronized void onResourceReady(@NonNull R resource,
+      @Nullable Transition<? super R> transition) {
     // Ignored, synchronized for backwards compatibility.
   }
 
@@ -197,13 +198,18 @@ public class RequestFutureTarget<R> implements FutureTarget<R>,
     if (timeoutMillis == null) {
       waiter.waitForTimeout(this, 0);
     } else if (timeoutMillis > 0) {
-      waiter.waitForTimeout(this, timeoutMillis);
+      long now = System.currentTimeMillis();
+      long deadline = now + timeoutMillis;
+      while (!isDone() && now < deadline) {
+        waiter.waitForTimeout(this, deadline - now);
+        now = System.currentTimeMillis();
+      }
     }
 
     if (Thread.interrupted()) {
       throw new InterruptedException();
     } else if (loadFailed) {
-      throw new GlideExecutionException(exception);
+      throw new ExecutionException(exception);
     } else if (isCancelled) {
       throw new CancellationException();
     } else if (!resultReceived) {
@@ -262,44 +268,17 @@ public class RequestFutureTarget<R> implements FutureTarget<R>,
     return false;
   }
 
-  // Visible for testing.
+  @VisibleForTesting
   static class Waiter {
-
-    public void waitForTimeout(Object toWaitOn, long timeoutMillis) throws InterruptedException {
+    // This is a simple wrapper class that is used to enable testing. The call to the wrapping class
+    // is waited on appropriately.
+    @SuppressWarnings("WaitNotInLoop")
+    void waitForTimeout(Object toWaitOn, long timeoutMillis) throws InterruptedException {
       toWaitOn.wait(timeoutMillis);
     }
 
-    public void notifyAll(Object toNotify) {
+    void notifyAll(Object toNotify) {
       toNotify.notifyAll();
-    }
-  }
-
-  private static class GlideExecutionException extends ExecutionException {
-
-    private final GlideException cause;
-
-    GlideExecutionException(GlideException cause) {
-      super();
-      this.cause = cause;
-    }
-
-    @Override
-    public void printStackTrace() {
-      printStackTrace(System.err);
-    }
-
-    @Override
-    public void printStackTrace(PrintStream s) {
-      super.printStackTrace(s);
-      s.print("Caused by: ");
-      cause.printStackTrace(s);
-    }
-
-    @Override
-    public void printStackTrace(PrintWriter s) {
-      super.printStackTrace(s);
-      s.print("Caused by: ");
-      cause.printStackTrace(s);
     }
   }
 }

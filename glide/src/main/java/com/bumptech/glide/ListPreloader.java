@@ -33,7 +33,7 @@ public class ListPreloader<T> implements AbsListView.OnScrollListener {
 
   private int lastEnd;
   private int lastStart;
-  private int lastFirstVisible;
+  private int lastFirstVisible = -1;
   private int totalItemCount;
 
   private boolean isIncreasing = true;
@@ -85,7 +85,7 @@ public class ListPreloader<T> implements AbsListView.OnScrollListener {
      * @param item The model to load.
      */
     @Nullable
-    RequestBuilder getPreloadRequestBuilder(U item);
+    RequestBuilder<?> getPreloadRequestBuilder(@NonNull U item);
   }
 
   /**
@@ -107,7 +107,7 @@ public class ListPreloader<T> implements AbsListView.OnScrollListener {
      * @param item A model
      */
     @Nullable
-    int[] getPreloadSize(T item, int adapterPosition, int perItemPosition);
+    int[] getPreloadSize(@NonNull T item, int adapterPosition, int perItemPosition);
   }
 
   /**
@@ -119,8 +119,9 @@ public class ListPreloader<T> implements AbsListView.OnScrollListener {
    * @param preloadDimensionProvider Provides the dimensions of images to load.
    * @param maxPreload               Maximum number of items to preload.
    */
-  public ListPreloader(RequestManager requestManager, PreloadModelProvider<T> preloadModelProvider,
-      PreloadSizeProvider<T> preloadDimensionProvider, int maxPreload) {
+  public ListPreloader(@NonNull RequestManager requestManager,
+      @NonNull PreloadModelProvider<T> preloadModelProvider,
+      @NonNull PreloadSizeProvider<T> preloadDimensionProvider, int maxPreload) {
     this.requestManager = requestManager;
     this.preloadModelProvider = preloadModelProvider;
     this.preloadDimensionProvider = preloadDimensionProvider;
@@ -169,12 +170,12 @@ public class ListPreloader<T> implements AbsListView.OnScrollListener {
     if (from < to) {
       // Increasing
       for (int i = start; i < end; i++) {
-        preloadAdapterPosition(this.preloadModelProvider.getPreloadItems(i), i, true);
+        preloadAdapterPosition(preloadModelProvider.getPreloadItems(i), i, true);
       }
     } else {
       // Decreasing
       for (int i = end - 1; i >= start; i--) {
-        preloadAdapterPosition(this.preloadModelProvider.getPreloadItems(i), i, false);
+        preloadAdapterPosition(preloadModelProvider.getPreloadItems(i), i, false);
       }
     }
 
@@ -206,7 +207,7 @@ public class ListPreloader<T> implements AbsListView.OnScrollListener {
       return;
     }
     RequestBuilder<Object> preloadRequestBuilder =
-        preloadModelProvider.getPreloadRequestBuilder(item);
+        (RequestBuilder<Object>) preloadModelProvider.getPreloadRequestBuilder(item);
     if (preloadRequestBuilder == null) {
       return;
     }
@@ -223,6 +224,8 @@ public class ListPreloader<T> implements AbsListView.OnScrollListener {
   private static final class PreloadTargetQueue {
     private final Queue<PreloadTarget> queue;
 
+    // The loop is short and the only point is to create the objects.
+    @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
     PreloadTargetQueue(int size) {
       queue = Util.createQueue(size);
 
@@ -248,17 +251,18 @@ public class ListPreloader<T> implements AbsListView.OnScrollListener {
     PreloadTarget() { }
 
     @Override
-    public void onResourceReady(Object resource, Transition<? super Object> transition) {
+    public void onResourceReady(@NonNull Object resource,
+        @Nullable Transition<? super Object> transition) {
       // Do nothing.
     }
 
     @Override
-    public void getSize(SizeReadyCallback cb) {
+    public void getSize(@NonNull SizeReadyCallback cb) {
       cb.onSizeReady(photoWidth, photoHeight);
     }
 
     @Override
-    public void removeCallback(SizeReadyCallback cb) {
+    public void removeCallback(@NonNull SizeReadyCallback cb) {
       // Do nothing because we don't retain references to SizeReadyCallbacks.
     }
   }

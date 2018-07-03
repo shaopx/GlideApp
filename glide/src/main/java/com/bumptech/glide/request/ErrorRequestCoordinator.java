@@ -1,5 +1,7 @@
 package com.bumptech.glide.request;
 
+import android.support.annotation.Nullable;
+
 /**
  * Runs a single primary {@link Request} until it completes and then a fallback error request only
  * if the single primary request fails.
@@ -7,12 +9,13 @@ package com.bumptech.glide.request;
 public final class ErrorRequestCoordinator implements RequestCoordinator,
     Request {
 
-  private final RequestCoordinator coordinator;
+  @Nullable
+  private final RequestCoordinator parent;
   private Request primary;
   private Request error;
 
-  public ErrorRequestCoordinator(RequestCoordinator coordinator) {
-    this.coordinator = coordinator;
+  public ErrorRequestCoordinator(@Nullable RequestCoordinator parent) {
+    this.parent = parent;
   }
 
   public void setRequests(Request primary, Request error) {
@@ -28,27 +31,13 @@ public final class ErrorRequestCoordinator implements RequestCoordinator,
   }
 
   @Override
-  public void pause() {
-    if (!primary.isFailed()) {
-      primary.pause();
-    }
-    if (error.isRunning()) {
-      error.pause();
-    }
-  }
-
-  @Override
   public void clear() {
-    if (primary.isFailed()) {
+    primary.clear();
+    // Don't check primary.isFailed() here because it will have been reset by the clear call
+    // immediately before this.
+    if (error.isRunning()) {
       error.clear();
-    } else {
-      primary.clear();
     }
-  }
-
-  @Override
-  public boolean isPaused() {
-    return primary.isFailed() ? error.isPaused() : primary.isPaused();
   }
 
   @Override
@@ -67,8 +56,8 @@ public final class ErrorRequestCoordinator implements RequestCoordinator,
   }
 
   @Override
-  public boolean isCancelled() {
-    return primary.isFailed() ? error.isCancelled() : primary.isCancelled();
+  public boolean isCleared() {
+    return primary.isFailed() ? error.isCleared() : primary.isCleared();
   }
 
   @Override
@@ -97,7 +86,7 @@ public final class ErrorRequestCoordinator implements RequestCoordinator,
   }
 
   private boolean parentCanSetImage() {
-    return coordinator == null || coordinator.canSetImage(this);
+    return parent == null || parent.canSetImage(this);
   }
 
   @Override
@@ -105,8 +94,17 @@ public final class ErrorRequestCoordinator implements RequestCoordinator,
     return parentCanNotifyStatusChanged() && isValidRequest(request);
   }
 
+  @Override
+  public boolean canNotifyCleared(Request request) {
+    return parentCanNotifyCleared() && isValidRequest(request);
+  }
+
+  private boolean parentCanNotifyCleared() {
+    return parent == null || parent.canNotifyCleared(this);
+  }
+
   private boolean parentCanNotifyStatusChanged() {
-    return coordinator == null || coordinator.canNotifyStatusChanged(this);
+    return parent == null || parent.canNotifyStatusChanged(this);
   }
 
   private boolean isValidRequest(Request request) {
@@ -119,13 +117,13 @@ public final class ErrorRequestCoordinator implements RequestCoordinator,
   }
 
   private boolean parentIsAnyResourceSet() {
-    return coordinator != null && coordinator.isAnyResourceSet();
+    return parent != null && parent.isAnyResourceSet();
   }
 
   @Override
   public void onRequestSuccess(Request request) {
-    if (coordinator != null) {
-      coordinator.onRequestSuccess(this);
+    if (parent != null) {
+      parent.onRequestSuccess(this);
     }
   }
 
@@ -138,8 +136,8 @@ public final class ErrorRequestCoordinator implements RequestCoordinator,
       return;
     }
 
-    if (coordinator != null) {
-      coordinator.onRequestFailed(error);
+    if (parent != null) {
+      parent.onRequestFailed(this);
     }
   }
 }

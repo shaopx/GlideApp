@@ -1,5 +1,6 @@
 package com.bumptech.glide.load.engine;
 
+import android.support.annotation.NonNull;
 import android.support.v4.util.Pools.Pool;
 import com.bumptech.glide.load.Options;
 import com.bumptech.glide.load.data.DataRewinder;
@@ -35,9 +36,9 @@ public class LoadPath<Data, ResourceType, Transcode> {
         + resourceClass.getSimpleName() + "->" + transcodeClass.getSimpleName() + "}";
   }
 
-  public Resource<Transcode> load(DataRewinder<Data> rewinder, Options options, int width,
+  public Resource<Transcode> load(DataRewinder<Data> rewinder, @NonNull Options options, int width,
       int height, DecodePath.DecodeCallback<ResourceType> decodeCallback) throws GlideException {
-    List<Throwable> throwables = listPool.acquire();
+    List<Throwable> throwables = Preconditions.checkNotNull(listPool.acquire());
     try {
       return loadWithExceptionList(rewinder, options, width, height, decodeCallback, throwables);
     } finally {
@@ -45,12 +46,13 @@ public class LoadPath<Data, ResourceType, Transcode> {
     }
   }
 
-  private Resource<Transcode> loadWithExceptionList(DataRewinder<Data> rewinder, Options options,
+  private Resource<Transcode> loadWithExceptionList(DataRewinder<Data> rewinder,
+      @NonNull Options options,
       int width, int height, DecodePath.DecodeCallback<ResourceType> decodeCallback,
       List<Throwable> exceptions) throws GlideException {
-    int size = decodePaths.size();
     Resource<Transcode> result = null;
-    for (int i = 0; i < size; i++) {
+    //noinspection ForLoopReplaceableByForEach to improve perf
+    for (int i = 0, size = decodePaths.size(); i < size; i++) {
       DecodePath<Data, ResourceType, Transcode> path = decodePaths.get(i);
       try {
         result = path.decode(rewinder, width, height, options, decodeCallback);
@@ -75,7 +77,6 @@ public class LoadPath<Data, ResourceType, Transcode> {
 
   @Override
   public String toString() {
-    return "LoadPath{" + "decodePaths="
-        + Arrays.toString(decodePaths.toArray(new DecodePath[decodePaths.size()])) + '}';
+    return "LoadPath{" + "decodePaths=" + Arrays.toString(decodePaths.toArray()) + '}';
   }
 }
