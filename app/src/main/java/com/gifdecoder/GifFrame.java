@@ -1,4 +1,4 @@
-package com.sogou.groupwenwen.gifdecode;
+package com.gifdecoder;
 
 
 import android.support.annotation.ColorInt;

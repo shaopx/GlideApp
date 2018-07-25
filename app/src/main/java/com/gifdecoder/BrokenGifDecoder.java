@@ -1,4 +1,4 @@
-package com.sogou.groupwenwen.gifdecode;
+package com.gifdecoder;
 
 /*
  * Copyright (c) 2013 Xcellent Creations, Inc.
@@ -40,10 +40,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-import static com.sogou.groupwenwen.gifdecode.GifFrame.DISPOSAL_BACKGROUND;
-import static com.sogou.groupwenwen.gifdecode.GifFrame.DISPOSAL_NONE;
-import static com.sogou.groupwenwen.gifdecode.GifFrame.DISPOSAL_PREVIOUS;
-import static com.sogou.groupwenwen.gifdecode.GifFrame.DISPOSAL_UNSPECIFIED;
+import static com.gifdecoder.GifFrame.DISPOSAL_BACKGROUND;
+import static com.gifdecoder.GifFrame.DISPOSAL_NONE;
+import static com.gifdecoder.GifFrame.DISPOSAL_PREVIOUS;
+import static com.gifdecoder.GifFrame.DISPOSAL_UNSPECIFIED;
 
 /**
  * @author shaopengxiang
@@ -53,8 +53,8 @@ import static com.sogou.groupwenwen.gifdecode.GifFrame.DISPOSAL_UNSPECIFIED;
  * 完整版:
  * https://wx2.sinaimg.cn/large/866a67c7gy1fkaw7ewstng20b208hhdx.gif
  */
-public class InCompleteGifDecoder implements GifDecoder {
-    private static final String TAG = "InCompleteGifDecoder";
+public class BrokenGifDecoder implements GifDecoder {
+    private static final String TAG = "BrokenGifDecoder";
 
     /** Maximum pixel stack size for decoding LZW compressed data. */
     private static final int MAX_STACK_SIZE = 4 * 1024;
@@ -120,19 +120,19 @@ public class InCompleteGifDecoder implements GifDecoder {
     @NonNull
     private Bitmap.Config bitmapConfig = Config.ARGB_8888;
 
-    public InCompleteGifDecoder(
+    public BrokenGifDecoder(
             GifDecoder.BitmapProvider provider, GifHeader gifHeader, ByteBuffer rawData) {
         this(provider, gifHeader, rawData, 1 /*sampleSize*/);
     }
 
-    public InCompleteGifDecoder(
+    public BrokenGifDecoder(
             GifDecoder.BitmapProvider provider, GifHeader gifHeader, ByteBuffer rawData,
             int sampleSize) {
         this(provider);
         setData(gifHeader, rawData, sampleSize);
     }
 
-    public InCompleteGifDecoder(
+    public BrokenGifDecoder(
             GifDecoder.BitmapProvider provider) {
         this.bitmapProvider = provider;
         header = new GifHeader();

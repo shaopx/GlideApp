@@ -1,4 +1,4 @@
-package com.sogou.groupwenwen.gifdecode;
+package com.gifdecoder;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -88,7 +88,6 @@ public class ByteBufferGifDecoder implements ResourceDecoder<ByteBuffer, GifDraw
 
     private GifDrawableResource decode(
             ByteBuffer byteBuffer, int width, int height, GifHeaderParser parser, Options options) {
-        Log.d(TAG, "decode: ....");
         long startTime = LogTime.getLogTime();
         final GifHeader header = parser.parseHeader();
 //        if (header.getNumFrames() <= 0 || header.getStatus() != GifDecoder.STATUS_OK) {
@@ -142,7 +141,7 @@ public class ByteBufferGifDecoder implements ResourceDecoder<ByteBuffer, GifDraw
     static class GifDecoderFactory {
         public GifDecoder build(GifDecoder.BitmapProvider provider, GifHeader header,
                                 ByteBuffer data, int sampleSize) {
-            return new InCompleteGifDecoder(provider, (com.sogou.groupwenwen.gifdecode.GifHeader) header, data, sampleSize);
+            return new BrokenGifDecoder(provider, (com.gifdecoder.GifHeader) header, data, sampleSize);
         }
     }
 

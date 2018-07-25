@@ -1,10 +1,9 @@
-package com.sogou.groupwenwen.gifdecode;
+package com.gifdecoder;
 
 
 import android.support.annotation.ColorInt;
 
 import com.bumptech.glide.gifdecoder.GifDecoder;
-import com.sogou.groupwenwen.gifdecode.GifFrame;
 
 import java.util.ArrayList;
 import java.util.List;

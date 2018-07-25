@@ -1,9 +1,9 @@
-package com.sogou.groupwenwen.gifdecode;
+package com.gifdecoder;
 
 
 import static com.bumptech.glide.gifdecoder.GifDecoder.STATUS_FORMAT_ERROR;
-import static com.sogou.groupwenwen.gifdecode.GifFrame.DISPOSAL_NONE;
-import static com.sogou.groupwenwen.gifdecode.GifFrame.DISPOSAL_UNSPECIFIED;
+import static com.gifdecoder.GifFrame.DISPOSAL_NONE;
+import static com.gifdecoder.GifFrame.DISPOSAL_UNSPECIFIED;
 
 import android.util.Log;
 
