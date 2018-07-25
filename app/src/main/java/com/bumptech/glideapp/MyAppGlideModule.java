@@ -7,9 +7,9 @@ import com.bumptech.glide.GlideBuilder;
 import com.bumptech.glide.Registry;
 import com.bumptech.glide.annotation.GlideModule;
 import com.bumptech.glide.load.ImageHeaderParser;
-import com.bumptech.glide.load.resource.gif.*;
+import com.bumptech.glide.load.resource.gif.GifDrawable;
+import com.bumptech.glide.load.resource.gif.StreamGifDecoder;
 import com.bumptech.glide.module.AppGlideModule;
-import com.gifdecoder.ByteBufferGifDecoder;
 
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -35,8 +35,8 @@ public class MyAppGlideModule extends AppGlideModule {
         // init the broken-gif decoder
         List<ImageHeaderParser> imageHeaderParsers = registry.getImageHeaderParsers();
 
-        ByteBufferGifDecoder byteBufferGifDecoder =
-                new ByteBufferGifDecoder(context, imageHeaderParsers, glide.getBitmapPool(), glide.getArrayPool());
+        com.gifdecoder.ByteBufferGifDecoder byteBufferGifDecoder =
+                new com.gifdecoder.ByteBufferGifDecoder(context, imageHeaderParsers, glide.getBitmapPool(), glide.getArrayPool());
         registry.prepend(Registry.BUCKET_GIF, ByteBuffer.class, GifDrawable.class, byteBufferGifDecoder);
 
         registry.prepend(Registry.BUCKET_GIF,
